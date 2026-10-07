@@ -1,17 +1,15 @@
-import { promises as fs } from "fs";
-import path from "path";
 import { v4 as uuid } from "uuid";
 import type { Todo } from "./types";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const DATA_FILE = path.join(DATA_DIR, "todos.json");
-
+// NOTE: serverless-safe store. File persistence doesn't survive on Vercel's
+// read-only filesystem, so todos live in memory (per serverless instance).
+// For durable multi-user storage, swap this for Vercel KV / Postgres later.
 function seed(): Todo[] {
   const now = new Date().toISOString();
   return [
     {
       id: uuid(),
-      title: "Welcome! Try adding your first todo 👋",
+      title: "Welcome! Try adding your first todo",
       completed: false,
       priority: "medium",
       category: "General",
@@ -27,7 +25,7 @@ function seed(): Todo[] {
       priority: "low",
       category: "Tips",
       dueDate: null,
-      notes: "Everything is saved to data/todos.json on the server.",
+      notes: "Hosted build uses in-memory storage per instance.",
       createdAt: now,
       updatedAt: now,
     },
@@ -45,23 +43,15 @@ function seed(): Todo[] {
   ];
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const g = globalThis as any;
+if (!g.__todos) g.__todos = seed();
+
 export async function readTodos(): Promise<Todo[]> {
-  try {
-    const raw = await fs.readFile(DATA_FILE, "utf-8");
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed as Todo[];
-  } catch (err: any) {
-    if (err?.code === "ENOENT") {
-      const initial = seed();
-      await writeTodos(initial);
-      return initial;
-    }
-    throw err;
-  }
+  return [...(g.__todos as Todo[])];
 }
 
 export async function writeTodos(todos: Todo[]): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  await fs.writeFile(DATA_FILE, JSON.stringify(todos, null, 2), "utf-8");
+  g.__todos = [...todos];
 }
+
