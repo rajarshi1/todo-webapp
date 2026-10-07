@@ -1,6 +1,6 @@
 # Todo Webapp — React + Node.js (SSR via Next.js)
 
-A full-featured Todo app running on **http://localhost:3000**.
+A full-featured Todo app running on **http://todo-webapp-19q6m82gm-madmax-09.vercel.app**.
 
 - Server-side rendered homepage (`app/page.tsx`)
 - Node REST API (`app/api/todos/...`)
